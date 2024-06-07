@@ -60,7 +60,6 @@ fun ChatInputBox(messageSendHandler: (String) -> Unit) {
                 capitalization = KeyboardCapitalization.Sentences,
                 autoCorrect = false,
                 keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Send,
             ),
             colors = TextFieldDefaults.textFieldColors(
                 unfocusedIndicatorColor = Color.Transparent,

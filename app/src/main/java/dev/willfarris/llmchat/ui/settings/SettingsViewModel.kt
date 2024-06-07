@@ -25,25 +25,33 @@ class SettingsViewModel(application: ChatAssistantApplication): ViewModel() {
             subtitle = "Remote URL of the Ollama API",
             defaultValue = OllamaPreferencesManager.DEFAULT_ENDPOINT,
             getCurrentSetting = { OllamaPreferencesManager.endpointUrl },
-        ) {newEndpointUrl -> OllamaPreferencesManager.endpointUrl = newEndpointUrl},
+            onChanged = { newEndpointUrl -> OllamaPreferencesManager.endpointUrl = newEndpointUrl},
+        ),
         OllamaPreferenceOption(
-            title = "Context size",
-            subtitle = "Custom model context length",
+            title = "Default context size",
+            subtitle = "Set the context size for new chats",
             defaultValue = OllamaPreferencesManager.DEFAULT_CONTEXT_SIZE.toString(),
-            getCurrentSetting = { OllamaPreferencesManager.contextSize.toString() }
-        ) { newContextSize ->
-            val newContextSizeInt: Int? = newContextSize.toIntOrNull()
-            Log.d("CONTEXT SIZE", "$newContextSizeInt")
-            if (newContextSizeInt != null) {
-                OllamaPreferencesManager.contextSize = newContextSizeInt
-            } else {
-                Toast.makeText(
-                    application,
-                    "$newContextSize is not a valid context size, keeping previous",
-                    Toast.LENGTH_LONG
-                ).show()
+            getCurrentSetting = { OllamaPreferencesManager.contextSize.toString() },
+            onChanged = { newContextSize ->
+                val newContextSizeInt: Int? = newContextSize.toIntOrNull()
+                if (newContextSizeInt != null) {
+                    OllamaPreferencesManager.contextSize = newContextSizeInt
+                } else {
+                    Toast.makeText(
+                        application,
+                        "$newContextSize is not a valid context size, keeping previous",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
             }
-        }
+        ),
+        OllamaPreferenceOption(
+            title = "Default system prompt",
+            subtitle = "Set the system prompt for new chats",
+            defaultValue = OllamaPreferencesManager.DEFAULT_SYSTEM_PROMPT,
+            getCurrentSetting =  { OllamaPreferencesManager.systemPrompt },
+            onChanged = { newSystemPrompt -> OllamaPreferencesManager.systemPrompt = newSystemPrompt },
+        )
     )
 
     fun setTheme(newTheme: String) {

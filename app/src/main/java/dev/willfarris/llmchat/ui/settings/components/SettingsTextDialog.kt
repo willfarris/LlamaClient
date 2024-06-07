@@ -1,6 +1,7 @@
 package dev.willfarris.llmchat.ui.settings.components
 
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.width
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -10,6 +11,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.dp
 import com.alorma.compose.settings.ui.base.internal.SettingsTileScaffold
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +44,11 @@ fun SettingsTextDialog(
     ) {
         Text(
             text = getCurrentSetting(),
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            overflow = TextOverflow.Ellipsis,
+            modifier = Modifier.width(160.dp),
+            textAlign = TextAlign.End,
         )
     }
 }

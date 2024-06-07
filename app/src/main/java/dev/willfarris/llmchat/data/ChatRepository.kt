@@ -41,14 +41,25 @@ class ChatRepository(
         val newUserMessage = ChatMessageEntity(0, chatId, "user", message, modelName, "")
         chatHistoryDAO.insertMessage(newUserMessage)
 
+        val conversation = chatHistoryDAO.getConversationById(chatId)
+
+        var messages = getAllMessages(chatId)
+        if(OllamaPreferencesManager.overrideSystemPrompt) {
+            val systemMessage = ChatMessage(
+                "system",
+                conversation.systemPrompt,
+                modelName,
+            )
+            messages = listOf(systemMessage) + messages
+        }
+
         val chatRequest = ChatRequest(
             model = modelName,
-            messages = getAllMessages(chatId),
+            messages = messages,
             stream = true,
             keepAlive = "24h",
-            system = null,
             options = ChatOptions(
-                numCtx = OllamaPreferencesManager.contextSize
+                numCtx = conversation.contextSize,
             ),
         )
         var response = ""

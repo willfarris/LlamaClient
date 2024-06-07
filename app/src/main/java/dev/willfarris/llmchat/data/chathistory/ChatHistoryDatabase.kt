@@ -18,7 +18,6 @@ abstract class ChatHistoryDatabase : RoomDatabase() {
         private var Instance: ChatHistoryDatabase? = null
 
         fun getDatabase(context: Context): ChatHistoryDatabase {
-            // if the Instance is not null, return it, otherwise create a new database instance.
             return Instance ?: synchronized(this) {
                 Room.databaseBuilder(context, ChatHistoryDatabase::class.java, "chat_database")
                     .build()
