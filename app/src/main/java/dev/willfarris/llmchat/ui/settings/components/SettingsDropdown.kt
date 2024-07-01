@@ -36,9 +36,9 @@ fun SettingsDropdown(
     SettingsTileScaffold(
         title = { Text(title) },
         subtitle = { Text(subtitle) },
+        modifier = Modifier.clickable { showDropdown = !showDropdown },
     ) {
         Row(
-            modifier = Modifier.clickable { showDropdown = !showDropdown },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(

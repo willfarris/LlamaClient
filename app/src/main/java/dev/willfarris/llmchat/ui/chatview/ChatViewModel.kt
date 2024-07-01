@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import com.google.gson.JsonSyntaxException
 import dev.willfarris.llmchat.ChatAssistantApplication
 import dev.willfarris.llmchat.data.ollama.ModelInfo
+import dev.willfarris.llmchat.data.preferences.OllamaPreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.update
@@ -29,32 +30,39 @@ data class ChatMessageUiContent(
 
 data class ChatSummaryUiContent(
     var chatId: Long,
-    var chatName: MutableState<String>,
+    var chatTitle: MutableState<String>,
+    var chatPrompt: MutableState<String>,
+    var chatContextSize: MutableState<String>,
+    var chatModel: MutableState<String>,
 )
+
 
 class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
     private val repository = application.chatAssistantRepository
 
     var messagesList = mutableStateListOf<ChatMessageUiContent>()
+        private set
     var chatsList = mutableStateListOf<ChatSummaryUiContent>()
+        private set
     var modelsList = mutableStateListOf<ModelInfo>()
-    var currentModel = mutableStateOf("")
-    val errorMessage: MutableStateFlow<String?> = MutableStateFlow(null)
-    var curChatId: Long = -1
+        private set
+    var curChatIndex: Int = OllamaPreferencesManager.lastChatIndex
+        private set
 
-    val appLoadingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
+    val errorMessage: MutableStateFlow<String?> = MutableStateFlow(null)
+    private val appLoadingState: MutableStateFlow<Boolean> = MutableStateFlow(false)
 
     init {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                repository.getAllConversations().map { c ->
-                    chatsList.add(c)
-                }
                 runBlocking {
+                    repository.getAllConversations().map { c ->
+                        chatsList.add(c)
+                    }
                     if (chatsList.isEmpty()) {
                         createNewChat()
                     } else {
-                        selectChat(chatsList.last().chatId)
+                        selectChat(curChatIndex)
                     }
                 }
                 try {
@@ -65,7 +73,6 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
                             }
                         }
                     }
-                    currentModel.value = modelsList[0].name
                 } catch(e: Exception) {
                     errorMessage.update {
                         "Unable to fetch available models from Ollama server"
@@ -78,10 +85,6 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
         }
     }
 
-    fun chooseModel(index: Int) {
-        currentModel.value = modelsList[index].name
-    }
-
     fun errorMessageComplete() {
         errorMessage.update {
             null
@@ -89,20 +92,17 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
     }
 
     fun sendMessageFromUser(text: String) {
-        if(curChatId == -1L) {
-            createNewChat()
-            Thread.sleep(100) // Oh dear this is dumb
-        }
-        val newMessage = ChatMessageUiContent("user", mutableStateOf( text), currentModel.value)
+        val c = chatsList[curChatIndex]
+        val newMessage = ChatMessageUiContent("user", mutableStateOf( text), c.chatModel.value)
         messagesList.add(newMessage)
 
         var assistantResponse: ChatMessageUiContent? = null
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 try {
-                    repository.sendMessage(curChatId, currentModel.value, text).collect {
+                    repository.sendMessage(c.chatId, c.chatModel.value, text).collect {
                         if(assistantResponse == null) {
-                            assistantResponse = ChatMessageUiContent("assistant", mutableStateOf(""), currentModel.value)
+                            assistantResponse = ChatMessageUiContent("assistant", mutableStateOf(""), c.chatModel.value)
                             messagesList.add(assistantResponse!!)
                         }
                         assistantResponse!!.content.value = assistantResponse!!.content.value + it
@@ -134,27 +134,39 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
         }
     }
 
-    fun deleteChat(chatId: Long) {
+    fun deleteChat(chatIndexToDelete: Int) {
         viewModelScope.launch {
-            chatsList.removeAt(
-                chatsList.indexOfFirst { c -> c.chatId == chatId }
-            )
-            withContext(Dispatchers.IO) {
-                repository.deleteChatById(chatId)
-            }
-            if(chatId == curChatId) {
-                if(chatsList.size > 0) {
-                    selectChat(chatsList.last().chatId)
-                } else {
-                    createNewChat()
+            val chatId = chatsList[chatIndexToDelete].chatId
+
+            chatsList.removeAt(chatIndexToDelete)
+            runBlocking {
+                withContext(Dispatchers.IO) {
+                    repository.deleteChatById(chatId)
                 }
             }
+            if(chatsList.isEmpty()) {
+                createNewChat()
+                return@launch
+            }
+
+            if(chatIndexToDelete == curChatIndex) selectChat(chatsList.lastIndex)
+            else if(chatIndexToDelete < curChatIndex) selectChat(--curChatIndex)
         }
     }
 
-    fun updateChatName(chatId: Long, chatName: String) {
-        val c = chatsList.find { c -> c.chatId == chatId }!!
-        c.chatName = mutableStateOf(chatName)
+    fun updateChatSettings(
+        chatIndex: Int,
+        chatTitle: String? = null,
+        chatModel: String? = null,
+        contextSize: String? = null,
+        chatPrompt: String? = null,
+    ) {
+        val c = chatsList[chatIndex]
+        if(chatTitle != null) c.chatTitle.value = chatTitle
+        if(chatModel != null) c.chatModel.value = chatModel
+        if(contextSize != null) c.chatContextSize.value = contextSize
+        if(chatPrompt != null) c.chatPrompt.value = chatPrompt
+
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 repository.updateChat(c)
@@ -162,14 +174,14 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
         }
     }
 
-    fun selectChat(chatId: Long) {
-        if(chatId == curChatId) return
-
-        curChatId = chatId
+    fun selectChat(chatIndex: Int) {
+        curChatIndex = chatIndex
+        OllamaPreferencesManager.lastChatIndex = chatIndex
         messagesList.clear()
+        val selectedChat = chatsList[curChatIndex]
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                repository.getAllMessages(curChatId).map { m ->
+                repository.selectChat(selectedChat.chatId).map { m ->
                     withContext(Dispatchers.Main) {
                         messagesList.add(
                             ChatMessageUiContent(m.role, mutableStateOf(m.content), m.modelName)
@@ -183,10 +195,10 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
     fun createNewChat() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
-                val newChat = repository.createChat("New Chat", currentModel.value)
+                val newChat = repository.createChat("New Chat")
                 withContext(Dispatchers.Main) {
                     chatsList.add(newChat)
-                    selectChat(newChat.chatId)
+                    selectChat(chatsList.lastIndex)
                 }
             }
         }

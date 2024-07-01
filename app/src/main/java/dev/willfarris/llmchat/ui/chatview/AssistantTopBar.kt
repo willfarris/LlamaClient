@@ -30,7 +30,6 @@ import dev.willfarris.llmchat.SettingsActivity
 
 @Composable
 fun AssistantTopBar(viewModel: ChatViewModel) {
-    var modelDropdownExpanded by remember { mutableStateOf(false) }
     val onSurface = MaterialTheme.colorScheme.onSurface
 
     Row(
@@ -40,25 +39,7 @@ fun AssistantTopBar(viewModel: ChatViewModel) {
             .padding(6.dp)
             .fillMaxWidth()
     ) {
-        Row(
-            modifier = Modifier
-                .clickable { modelDropdownExpanded = !modelDropdownExpanded }
-                .padding(2.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = viewModel.currentModel.value,
-                fontSize = 18.sp,
-                color = onSurface,
-                textAlign = TextAlign.Left,
-                modifier = Modifier.padding(start = 4.dp),
-            )
-            Image(
-                painter = painterResource(R.drawable.baseline_arrow_drop_down_32),
-                contentDescription = "Pick model dropdown",
-                colorFilter = ColorFilter.tint(onSurface),
-            )
-        }
+        ModelSelectDropdown(viewModel, onSurface)
         val context = LocalContext.current
         IconButton(
             onClick = {
@@ -72,9 +53,5 @@ fun AssistantTopBar(viewModel: ChatViewModel) {
             )
         }
     }
-    DropdownMenu(expanded = modelDropdownExpanded, onDismissRequest = {modelDropdownExpanded = !modelDropdownExpanded}) {
-        viewModel.modelsList.forEachIndexed { index, modelInfo ->
-            DropdownMenuItem(text = { Text(modelInfo.name) }, onClick =  {viewModel.chooseModel(index); modelDropdownExpanded = !modelDropdownExpanded})
-        }
-    }
+
 }

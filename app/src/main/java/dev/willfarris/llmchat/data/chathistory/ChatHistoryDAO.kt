@@ -9,10 +9,10 @@ import androidx.room.Query
 @Dao
 interface ChatHistoryDAO {
 
-    @Query("SELECT * from messages")
+    @Query("SELECT * FROM messages")
     suspend fun getAllMessages(): List<ChatMessageEntity>
 
-    @Query("SELECT * from messages where chatId = :chatId")
+    @Query("SELECT * FROM messages WHERE chatId = :chatId")
     suspend fun getMessagesInChat(chatId: Long): List<ChatMessageEntity>
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
@@ -22,18 +22,18 @@ interface ChatHistoryDAO {
     suspend fun deleteMessage(chatMessageEntity: ChatMessageEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun newConversation(newChat: ChatConversationEntity): Long
+    suspend fun createOrUpdateConversation(newChat: ChatConversationEntity): Long
 
-    @Query("UPDATE chats SET title = :newTitle WHERE id = :chatId ")
-    suspend fun updateConversation(chatId: Long, newTitle: String)
-
-    @Query("SELECT * from chats")
+    @Query("SELECT * FROM chats")
     suspend fun getAllConversations(): List<ChatConversationEntity>
 
-    @Query("DELETE from chats where id = :chatId")
+    @Query("SELECT * FROM chats WHERE id = :chatId LIMIT 1")
+    suspend fun getConversationById(chatId: Long): ChatConversationEntity
+
+    @Query("DELETE FROM chats WHERE id = :chatId")
     suspend fun deleteConversationById(chatId: Long)
 
-    @Query("DELETE from messages where chatId = :chatId")
+    @Query("DELETE FROM messages WHERE chatId = :chatId")
     suspend fun deleteMessagesWithChatId(chatId: Long)
 
 }

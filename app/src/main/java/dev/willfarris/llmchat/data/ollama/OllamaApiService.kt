@@ -36,8 +36,8 @@ interface OllamaAPIService {
         fun getInstance() : OllamaAPIService {
             if(ollamaAPIService == null) {
                 val client = OkHttpClient.Builder()
-                    .readTimeout(10, TimeUnit.SECONDS)
-                    .writeTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(60, TimeUnit.SECONDS)
+                    .writeTimeout(60, TimeUnit.SECONDS)
                     .connectTimeout(10, TimeUnit.SECONDS)
                     .build()
 
