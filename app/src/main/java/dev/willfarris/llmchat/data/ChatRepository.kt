@@ -17,7 +17,7 @@ class ChatRepository(
     private val chatHistoryDAO: ChatHistoryDAO,
     private val ollamaAPIService: OllamaAPIService
 ) {
-    suspend fun getAllMessages(chatId: Long): List<ChatMessage> = chatHistoryDAO.getMessagesInChat(chatId).map {m ->
+    suspend fun selectChat(chatId: Long): List<ChatMessage> = chatHistoryDAO.getMessagesInChat(chatId).map { m ->
         ChatMessage(
             m.role,
             m.messageContent,
@@ -27,14 +27,31 @@ class ChatRepository(
 
     suspend fun getAllConversations(): List<ChatSummaryUiContent> = chatHistoryDAO.getAllConversations().map { c ->
         ChatSummaryUiContent(
-            c.id,
-            mutableStateOf(c.title),
+            chatId = c.id,
+            chatTitle = mutableStateOf(c.title),
+            chatModel =  mutableStateOf(c.preferredModel),
+            chatContextSize = mutableStateOf("${c.contextSize}"),
+            chatPrompt = mutableStateOf(c.systemPrompt)
         )
     }
 
-    suspend fun createChat(title: String, modelName: String): ChatSummaryUiContent {
-        val chatId = chatHistoryDAO.newConversation(ChatConversationEntity(title = title, modelName = modelName))
-        return ChatSummaryUiContent(chatId, mutableStateOf(title))
+    suspend fun createChat(title: String): ChatSummaryUiContent {
+        val chatConversationEntity = ChatConversationEntity(
+            id = 0,
+            title = title,
+            preferredModel = "",
+            contextSize = OllamaPreferencesManager.contextSize,
+            systemPrompt = OllamaPreferencesManager.systemPrompt,
+        )
+        val chatId = chatHistoryDAO.createOrUpdateConversation(chatConversationEntity)
+        val chat = chatHistoryDAO.getConversationById(chatId)
+        return ChatSummaryUiContent(
+            chatId = chatId,
+            chatTitle = mutableStateOf(chat.title),
+            chatPrompt = mutableStateOf(chat.systemPrompt),
+            chatContextSize = mutableStateOf("${chat.contextSize}"),
+            chatModel = mutableStateOf(chat.preferredModel)
+        )
     }
 
     suspend fun sendMessage(chatId: Long, modelName: String, message: String) =  flow {
@@ -43,15 +60,13 @@ class ChatRepository(
 
         val conversation = chatHistoryDAO.getConversationById(chatId)
 
-        var messages = getAllMessages(chatId)
-        if(OllamaPreferencesManager.overrideSystemPrompt) {
-            val systemMessage = ChatMessage(
-                "system",
-                conversation.systemPrompt,
-                modelName,
-            )
-            messages = listOf(systemMessage) + messages
-        }
+        var messages = selectChat(chatId)
+        val systemMessage = ChatMessage(
+            "system",
+            conversation.systemPrompt,
+            modelName,
+        )
+        messages = listOf(systemMessage) + messages
 
         val chatRequest = ChatRequest(
             model = modelName,
@@ -71,7 +86,14 @@ class ChatRepository(
     }
 
     suspend fun updateChat(fromUiContent: ChatSummaryUiContent) {
-        chatHistoryDAO.updateConversation(fromUiContent.chatId, fromUiContent.chatName.value)
+        val chatConversationEntity = ChatConversationEntity(
+            id = fromUiContent.chatId,
+            title = fromUiContent.chatTitle.value,
+            preferredModel = fromUiContent.chatModel.value,
+            contextSize = fromUiContent.chatContextSize.value.toInt(),
+            systemPrompt = fromUiContent.chatPrompt.value,
+        )
+        chatHistoryDAO.createOrUpdateConversation(chatConversationEntity)
     }
 
     fun getAvailableModels(): List<ModelInfo> {

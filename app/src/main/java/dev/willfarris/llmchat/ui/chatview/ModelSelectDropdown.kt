@@ -22,7 +22,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.PopupProperties
 import dev.willfarris.llmchat.R
 
 @Composable
@@ -39,7 +38,7 @@ fun ModelSelectDropdown(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = viewModel.currentModel.value,
+            text = viewModel.chatsList[viewModel.curChatIndex].chatModel.value,
             fontSize = fontSize,
             color = textColor,
             textAlign = TextAlign.Left,
@@ -50,7 +49,13 @@ fun ModelSelectDropdown(
             onDismissRequest = {modelDropdownExpanded = !modelDropdownExpanded},
         ) {
             viewModel.modelsList.forEachIndexed { index, modelInfo ->
-                DropdownMenuItem(text = { Text(modelInfo.name) }, onClick =  {viewModel.chooseModel(index); modelDropdownExpanded = !modelDropdownExpanded})
+                DropdownMenuItem(
+                    text = { Text(modelInfo.name) },
+                    onClick =  {
+                        viewModel.updateChatSettings(viewModel.curChatIndex, chatModel = modelInfo.name)
+                        modelDropdownExpanded = !modelDropdownExpanded
+                    }
+                )
             }
         }
         Image(

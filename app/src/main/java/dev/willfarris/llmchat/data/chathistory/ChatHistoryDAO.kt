@@ -22,10 +22,7 @@ interface ChatHistoryDAO {
     suspend fun deleteMessage(chatMessageEntity: ChatMessageEntity)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun newConversation(newChat: ChatConversationEntity): Long
-
-    @Query("UPDATE chats SET title = :newTitle WHERE id = :chatId ")
-    suspend fun updateConversation(chatId: Long, newTitle: String)
+    suspend fun createOrUpdateConversation(newChat: ChatConversationEntity): Long
 
     @Query("SELECT * FROM chats")
     suspend fun getAllConversations(): List<ChatConversationEntity>
