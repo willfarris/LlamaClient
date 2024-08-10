@@ -1,7 +1,11 @@
-package dev.willfarris.llmchat.data.ollama
+package dev.willfarris.llmchat.data.api.ollama
 
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import dev.willfarris.llmchat.data.api.ollama.chat.ChatPartialResponse
+import dev.willfarris.llmchat.data.api.ollama.chat.ChatRequest
+import dev.willfarris.llmchat.data.api.ollama.health.PsInfo
+import dev.willfarris.llmchat.data.api.ollama.model.Tags
 import dev.willfarris.llmchat.data.preferences.OllamaPreferencesManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
@@ -13,6 +17,7 @@ import retrofit2.Call
 import retrofit2.HttpException
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import retrofit2.converter.scalars.ScalarsConverterFactory
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -30,6 +35,12 @@ interface OllamaAPIService {
     @GET("api/tags")
     fun tags(): Call<Tags>
 
+    @GET("/")
+    fun health(): Call<String>
+
+    @GET("api/ps")
+    fun ps(): Call<PsInfo>
+
     companion object {
         private var ollamaAPIService: OllamaAPIService? = null
 
@@ -44,6 +55,10 @@ interface OllamaAPIService {
                 val retrofit = Retrofit.Builder()
                     .baseUrl(OllamaPreferencesManager.endpointUrl)
                     .client(client)
+                    .addConverterFactory(
+                        ScalarsConverterFactory
+                            .create()
+                    )
                     .addConverterFactory(
                         GsonConverterFactory
                             .create()

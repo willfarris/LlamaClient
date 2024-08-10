@@ -1,4 +1,4 @@
-package dev.willfarris.llmchat.data.ollama
+package dev.willfarris.llmchat.data.api.ollama.model
 
 import com.google.gson.annotations.SerializedName
 
@@ -8,7 +8,11 @@ data class ModelInfo(
     val modifiedAt: String,
     val size: Long,
     val digest: String,
-    val details: Details
+    val details: Details,
+    @SerializedName("expires_at")
+    val expiresAt: String?,
+    @SerializedName("size_vram")
+    val sizeVram: Long?,
 ) {
     data class Details(
         val format: String,

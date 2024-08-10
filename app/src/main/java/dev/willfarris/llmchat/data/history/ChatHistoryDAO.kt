@@ -1,4 +1,4 @@
-package dev.willfarris.llmchat.data.chathistory
+package dev.willfarris.llmchat.data.history
 
 import androidx.room.Dao
 import androidx.room.Delete

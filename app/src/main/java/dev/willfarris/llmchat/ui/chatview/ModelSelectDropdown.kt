@@ -23,14 +23,21 @@ import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.willfarris.llmchat.R
+import dev.willfarris.llmchat.data.api.ollama.model.ModelInfo
 
 @Composable
 fun ModelSelectDropdown(
-    viewModel: ChatViewModel,
+    availableModelsList: List<ModelInfo>,
+    curModel: String?,
+    onModelSelectedCallback: (Int) -> Unit,
     textColor: Color,
     fontSize: TextUnit = 18.sp,
 ) {
     var modelDropdownExpanded by remember { mutableStateOf(false) }
+    val curModelText = if(curModel == null && availableModelsList.isNotEmpty()) {
+        "Select a model"
+    } else curModel ?: "No models available"
+
     Row(
         modifier = Modifier
             .clickable { modelDropdownExpanded = !modelDropdownExpanded }
@@ -38,7 +45,7 @@ fun ModelSelectDropdown(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = viewModel.chatsList[viewModel.curChatIndex].chatModel.value,
+            text = curModelText,
             fontSize = fontSize,
             color = textColor,
             textAlign = TextAlign.Left,
@@ -48,11 +55,11 @@ fun ModelSelectDropdown(
             expanded = modelDropdownExpanded,
             onDismissRequest = {modelDropdownExpanded = !modelDropdownExpanded},
         ) {
-            viewModel.modelsList.forEachIndexed { index, modelInfo ->
+            availableModelsList.forEachIndexed { index, modelInfo ->
                 DropdownMenuItem(
                     text = { Text(modelInfo.name) },
                     onClick =  {
-                        viewModel.updateChatSettings(viewModel.curChatIndex, chatModel = modelInfo.name)
+                        onModelSelectedCallback(index)
                         modelDropdownExpanded = !modelDropdownExpanded
                     }
                 )

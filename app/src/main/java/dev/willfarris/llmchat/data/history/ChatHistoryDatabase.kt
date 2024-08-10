@@ -1,4 +1,4 @@
-package dev.willfarris.llmchat.data.chathistory
+package dev.willfarris.llmchat.data.history
 
 import android.content.Context
 import androidx.room.Database

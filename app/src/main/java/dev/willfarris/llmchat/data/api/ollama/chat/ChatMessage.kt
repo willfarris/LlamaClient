@@ -1,4 +1,4 @@
-package dev.willfarris.llmchat.data.ollama
+package dev.willfarris.llmchat.data.api.ollama.chat
 
 data class ChatMessage(
     val role: String,

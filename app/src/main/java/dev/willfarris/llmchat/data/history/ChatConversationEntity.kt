@@ -1,8 +1,7 @@
-package dev.willfarris.llmchat.data.chathistory
+package dev.willfarris.llmchat.data.history
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import dev.willfarris.llmchat.data.preferences.OllamaPreferencesManager
 
 @Entity(tableName = "chats")
 data class ChatConversationEntity(
@@ -10,7 +9,7 @@ data class ChatConversationEntity(
     val id: Long = 0,
 
     val title: String,
-    val preferredModel: String,
+    val preferredModel: String?,
     val contextSize: Int,
     val systemPrompt: String,
 )

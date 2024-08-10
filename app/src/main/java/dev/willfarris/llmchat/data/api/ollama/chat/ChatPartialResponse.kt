@@ -1,4 +1,4 @@
-package dev.willfarris.llmchat.data.ollama
+package dev.willfarris.llmchat.data.api.ollama.chat
 
 import com.google.gson.annotations.SerializedName
 

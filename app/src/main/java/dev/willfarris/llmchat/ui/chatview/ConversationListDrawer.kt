@@ -157,7 +157,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
         val chatTitle: MutableState<String> = mutableStateOf(editChat.chatTitle.value)
         val chatPrompt: MutableState<String> = mutableStateOf(editChat.chatPrompt.value)
         val chatContextSize: MutableState<String> = mutableStateOf(editChat.chatContextSize.value)
-        val preferredModel: MutableState<String> = mutableStateOf(editChat.chatModel.value)
+        val preferredModel: MutableState<String?> = mutableStateOf(editChat.chatModel)
 
         var expanded by remember { mutableStateOf(false) }
 
@@ -190,7 +190,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
                     ) {
                         OutlinedTextField(
                             readOnly = true,
-                            value = preferredModel.value,
+                            value = preferredModel.value ?: "Select a model",
                             label = { Text("Model") },
                             onValueChange = {},
                             modifier = Modifier

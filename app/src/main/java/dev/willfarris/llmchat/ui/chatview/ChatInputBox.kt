@@ -2,6 +2,7 @@ package dev.willfarris.llmchat.ui.chatview
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -42,7 +43,7 @@ fun ChatInputBox(messageSendHandler: (String) -> Unit) {
     var chatInputFieldValue by remember { mutableStateOf(TextFieldValue("")) }
 
     val buttonColor = MaterialTheme.colorScheme.primary
-    val buttonIcon = MaterialTheme.colorScheme.onPrimary
+    val buttonIcon = MaterialTheme.colorScheme.onSurfaceVariant
 
     Row(
         modifier = Modifier
@@ -70,9 +71,27 @@ fun ChatInputBox(messageSendHandler: (String) -> Unit) {
             singleLine = false,
             modifier = Modifier
                 .fillMaxWidth()
-                .weight(0.5f)
+                .weight(0.5f),
+            trailingIcon = {
+                if (chatInputFieldValue.text != "") {
+                    Image(
+                        painter = painterResource(id = R.drawable.baseline_send_24),
+                        colorFilter = ColorFilter.tint(buttonIcon),
+                        contentDescription = "Send button",
+                        modifier = Modifier
+                            .clickable {
+                                if (chatInputFieldValue.text != "")
+                                    messageSendHandler(chatInputFieldValue.text)
+                                chatInputFieldValue = TextFieldValue("")
+                            }
+                            .clip(
+                                CircleShape
+                            )
+                    )
+                }
+            }
         )
-        Spacer(modifier = Modifier.width(8.dp))
+        /*Spacer(modifier = Modifier.width(8.dp))
         IconButton(
             onClick = {
                 if (chatInputFieldValue.text != "")
@@ -91,7 +110,7 @@ fun ChatInputBox(messageSendHandler: (String) -> Unit) {
                 colorFilter = ColorFilter.tint(buttonIcon),
                 contentDescription = "Send button",
             )
-        }
+        }*/
     }
 }
 
