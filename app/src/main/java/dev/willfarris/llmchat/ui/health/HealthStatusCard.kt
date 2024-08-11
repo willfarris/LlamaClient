@@ -35,7 +35,7 @@ fun HealthStatusCard(
                 }
                 if(viewModel.heartbeatState.value) {
                     Spacer(modifier = Modifier.height(8.dp))
-                    PsModelList(viewModel.activeModelsList)
+                    PsModelList(viewModel.activeModelsList.value)
                 }
             }
         }

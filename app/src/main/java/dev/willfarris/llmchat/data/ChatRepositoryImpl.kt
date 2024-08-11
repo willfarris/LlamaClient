@@ -1,34 +1,57 @@
 package dev.willfarris.llmchat.data
 
-import androidx.compose.runtime.mutableStateOf
 import dev.willfarris.llmchat.data.history.ChatConversationEntity
 import dev.willfarris.llmchat.data.history.ChatHistoryDAO
 import dev.willfarris.llmchat.data.history.ChatMessageEntity
-import dev.willfarris.llmchat.data.api.ollama.chat.ChatMessage
-import dev.willfarris.llmchat.data.api.ollama.chat.ChatOptions
-import dev.willfarris.llmchat.data.api.ollama.chat.ChatRequest
-import dev.willfarris.llmchat.data.api.ollama.model.ModelInfo
-import dev.willfarris.llmchat.data.api.ollama.OllamaAPIService
-import dev.willfarris.llmchat.data.api.ollama.health.HealthStatus
-import dev.willfarris.llmchat.data.preferences.OllamaPreferencesManager
-import dev.willfarris.llmchat.ui.chatview.ChatSummaryUiContent
-import kotlinx.coroutines.flow.flow
-import java.io.IOException
+import dev.willfarris.llmchat.domain.Chat
+import dev.willfarris.llmchat.domain.ChatRepository
+import dev.willfarris.llmchat.domain.Message
 
-class ChatRepository(
-    private val chatHistoryDAO: ChatHistoryDAO,
-    private val ollamaAPIService: OllamaAPIService
-) {
+class ChatRepositoryImpl(
+    private val chatHistoryDAO: ChatHistoryDAO
+): ChatRepository {
 
-    suspend fun selectChat(chatId: Long): List<ChatMessage> = chatHistoryDAO.getMessagesInChat(chatId).map { m ->
+    /*suspend fun selectChat(chatId: Long): List<ChatMessage> = chatHistoryDAO.getMessagesInChat(chatId).map { m ->
         ChatMessage(
             m.role,
             m.messageContent,
             m.modelName,
         )
+    }*/
+
+    override suspend fun getChatHistory(chat: Chat): List<Message> {
+        //val chat = chatHistoryDAO.getConversationById(chatId)
+        val messages = chatHistoryDAO.getMessagesInChat(chat.id).map {
+            Message(
+                role = it.role,
+                content = it.messageContent,
+                modelName = it.modelName,
+            )
+        }
+        return messages
+        /*return Chat(
+            model = chat.preferredModel,
+            title = chat.title,
+            contextSize = chat.contextSize,
+            systemPrompt = chat.systemPrompt,
+            //messages = messages
+        )*/
     }
 
-    suspend fun getAllConversations(): List<ChatSummaryUiContent> = chatHistoryDAO.getAllConversations().map { c ->
+    override suspend fun getAllChats(): List<Chat> {
+        val chats = chatHistoryDAO.getAllConversations().map {
+            Chat(
+                id = it.id,
+                model = it.preferredModel,
+                title = it.title,
+                contextSize = it.contextSize,
+                systemPrompt = it.systemPrompt,
+            )
+        }
+        return chats
+    }
+
+    /*suspend fun getAllConversations(): List<ChatSummaryUiContent> = chatHistoryDAO.getAllConversations().map { c ->
         ChatSummaryUiContent(
             chatId = c.id,
             chatTitle = mutableStateOf(c.title),
@@ -36,9 +59,55 @@ class ChatRepository(
             chatContextSize = mutableStateOf("${c.contextSize}"),
             chatPrompt = mutableStateOf(c.systemPrompt)
         )
+    }*/
+
+    override suspend fun saveChat(
+        chat: Chat
+    ): Chat {
+        val chatEntity = ChatConversationEntity(
+            id = chat.id,
+            title = chat.title,
+            preferredModel = chat.model,
+            contextSize = chat.contextSize,
+            systemPrompt = chat.systemPrompt,
+        )
+        val chatId = chatHistoryDAO.createOrUpdateConversation(chatEntity)
+        return Chat(
+            id = chatId,
+            model = chat.model,
+            title = chat.title,
+            contextSize = chat.contextSize,
+            systemPrompt = chat.systemPrompt,
+        )
     }
 
-    suspend fun createChat(title: String): ChatSummaryUiContent {
+    override suspend fun deleteChat(chat: Chat) {
+        chatHistoryDAO.deleteConversationById(chat.id)
+    }
+
+    override suspend fun saveMessage(chat: Chat, message: Message): Message {
+        val messageEntity = ChatMessageEntity(
+            id = chat.id,
+            role = message.role,
+            messageContent = message.content,
+            modelName = chat.model!!,
+            timeStamp = "",
+        )
+        val messageId = chatHistoryDAO.insertMessage(messageEntity)
+        return Message(
+            id = messageId,
+            role = message.role,
+            content = message.content,
+            modelName = message.modelName,
+        )
+    }
+
+    override suspend fun deleteMessage(chat: Chat, message: Message) {
+        chatHistoryDAO.deleteMessage(message.id)
+    }
+
+
+    /*suspend fun createChat(title: String): ChatSummaryUiContent {
         val chatConversationEntity = ChatConversationEntity(
             id = 0,
             title = title,
@@ -55,9 +124,9 @@ class ChatRepository(
             chatContextSize = mutableStateOf("${chat.contextSize}"),
             chatModel = chat.preferredModel
         )
-    }
+    }*/
 
-    suspend fun sendMessage(chatId: Long, modelName: String, message: String) =  flow {
+    /*suspend fun sendMessage(chatId: Long, modelName: String, message: String) =  flow {
         val newUserMessage = ChatMessageEntity(0, chatId, "user", message, modelName, "")
         chatHistoryDAO.insertMessage(newUserMessage)
 
@@ -86,9 +155,9 @@ class ChatRepository(
             emit(partialResponse.message.content)
         }
         chatHistoryDAO.insertMessage(ChatMessageEntity(0L, chatId, "assistant", response, modelName, "TODO"))
-    }
+    }*/
 
-    suspend fun updateConversation(
+    /*suspend fun updateConversation(
         id: Long,
         title: String,
         model: String?,
@@ -103,24 +172,24 @@ class ChatRepository(
             systemPrompt = systemPrompt,
         )
         chatHistoryDAO.createOrUpdateConversation(chatConversationEntity)
-    }
+    }*/
 
-    fun getAvailableModels(): List<ModelInfo> {
+    /*fun getAvailableModels(): List<ModelInfo> {
         val tags = ollamaAPIService.tags().execute()
         return tags.body()!!.models
-    }
+    }*/
 
-    fun getLoadedModels(): List<ModelInfo> {
+    /*fun getLoadedModels(): List<ModelInfo> {
         val ps = ollamaAPIService.ps().execute()
         return ps.body()!!.models
-    }
+    }*/
 
-    suspend fun deleteChatById(chatId: Long) {
+    /*suspend fun deleteChatById(chatId: Long) {
         chatHistoryDAO.deleteMessagesWithChatId(chatId)
         chatHistoryDAO.deleteConversationById(chatId)
-    }
+    }*/
 
-    fun serverHealth(): HealthStatus {
+    /*fun serverHealth(): HealthStatus {
         val heartbeat = try {
             ollamaAPIService.health().execute().body()!!
         } catch (e: IOException) {
@@ -137,5 +206,5 @@ class ChatRepository(
             return HealthStatus(heartbeat, null, tags)
         }
         return HealthStatus(heartbeat, psInfo, tags)
-    }
+    }*/
 }

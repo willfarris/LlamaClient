@@ -24,10 +24,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.willfarris.llmchat.R
 import dev.willfarris.llmchat.data.api.ollama.model.ModelInfo
+import dev.willfarris.llmchat.domain.Model
 
 @Composable
 fun ModelSelectDropdown(
-    availableModelsList: List<ModelInfo>,
+    availableModelsList: List<Model>,
     curModel: String?,
     onModelSelectedCallback: (Int) -> Unit,
     textColor: Color,

@@ -48,7 +48,7 @@ fun AssistantTopBar(viewModel: ChatViewModel) {
             .padding(6.dp)
             .fillMaxWidth()
     ) {
-        ModelSelectDropdown(viewModel.modelsList, viewModel.curModelName.value, {index -> viewModel.selectModel(index)}, onSurface)
+        ModelSelectDropdown(viewModel.modelsList.value, viewModel.curModelName.value, {index -> viewModel.selectModel(index)}, onSurface)
         Row {
             IconButton(
                 onClick = { viewModel.triggerHeartbeat(); heartbeatStatusDropdownState = !heartbeatStatusDropdownState }

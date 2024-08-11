@@ -64,8 +64,8 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
             modifier = Modifier.weight(1f)
         ) {
             itemsIndexed(
-                viewModel.chatsList,
-                key = { _, chat -> chat.chatId }
+                viewModel.chatList.value,
+                key = { _, chat -> chat.id }
             ) { index, chat ->
                 val backgroundColor =
                     if (index == viewModel.curChatIndex) selectedBubbleColor else bubbleColor
@@ -78,14 +78,14 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
                         .shadow(elevation = 2.dp, shape = RoundedCornerShape(8.dp))
                         .fillMaxWidth()
                         .background(backgroundColor)
-                        .clickable { viewModel.selectChat(index) },
+                        .clickable { viewModel.selectChat(chat.id) },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     var chatDropdownExpanded by remember { mutableStateOf(false) }
 
                     Text(
-                        text = chat.chatTitle.value,
+                        text = chat.title,
                         color = textColor,
                         modifier = Modifier
                             .padding(horizontal = 12.dp)
@@ -153,11 +153,11 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
     }
 
     if(showEditDialog) {
-        val editChat = viewModel.chatsList[editIndex]
-        val chatTitle: MutableState<String> = mutableStateOf(editChat.chatTitle.value)
-        val chatPrompt: MutableState<String> = mutableStateOf(editChat.chatPrompt.value)
-        val chatContextSize: MutableState<String> = mutableStateOf(editChat.chatContextSize.value)
-        val preferredModel: MutableState<String?> = mutableStateOf(editChat.chatModel)
+        val editChat = viewModel.chatList.value[editIndex]
+        val chatTitle: MutableState<String> = mutableStateOf(editChat.title)
+        val chatPrompt: MutableState<String> = mutableStateOf(editChat.systemPrompt)
+        val chatContextSize: MutableState<String> = mutableStateOf(editChat.contextSize.toString())
+        val preferredModel: MutableState<String?> = mutableStateOf(editChat.model)
 
         var expanded by remember { mutableStateOf(false) }
 
@@ -204,7 +204,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
                             expanded = expanded,
                             onDismissRequest = { expanded = false },
                         ) {
-                            viewModel.modelsList.forEach {model ->
+                            viewModel.modelsList.value.forEach {model ->
                                 DropdownMenuItem(
                                     text = { Text(model.name) },
                                     onClick = {
@@ -238,7 +238,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
             },
             onConfirm = {
                 viewModel.updateChatSettings(
-                    editIndex,
+                    editChat,
                     chatTitle = chatTitle.value,
                     chatModel = preferredModel.value,
                     contextSize = chatContextSize.value,

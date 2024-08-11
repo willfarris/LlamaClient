@@ -18,8 +18,8 @@ interface ChatHistoryDAO {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertMessage(chatMessageEntity: ChatMessageEntity): Long
 
-    @Delete
-    suspend fun deleteMessage(chatMessageEntity: ChatMessageEntity)
+    @Query("DELETE FROM messages WHERE id = :messageId")
+    suspend fun deleteMessage(messageId: Long)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun createOrUpdateConversation(newChat: ChatConversationEntity): Long

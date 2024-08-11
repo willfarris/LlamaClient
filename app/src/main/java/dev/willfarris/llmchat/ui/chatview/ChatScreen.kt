@@ -41,7 +41,7 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    LaunchedEffect(viewModel.messagesList.size) {
+    LaunchedEffect(viewModel.messagesList.value.size) {
         messageListState.animateScrollToItem(0)
     }
 
@@ -94,7 +94,7 @@ fun ChatScreen(
                     state = messageListState,
                 ) {
                     itemsIndexed(
-                        viewModel.messagesList.asReversed(),
+                        viewModel.messagesList.value.asReversed(),
                         //key = { message -> message.id }
                     ) { index, message ->
                         ChatBubble(

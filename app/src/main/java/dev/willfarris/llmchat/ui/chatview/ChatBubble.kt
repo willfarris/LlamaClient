@@ -29,11 +29,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.jeziellago.compose.markdowntext.MarkdownText
+import dev.willfarris.llmchat.domain.Message
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(
-    message: ChatMessageUiContent,
+    message: Message,
     onDelete: () -> Unit,
     onRegenerate: () -> Unit,
 ) {
@@ -95,7 +96,7 @@ fun ChatBubble(
 
 @Composable
 fun ChatBubbleCard(
-    message: ChatMessageUiContent,
+    message: Message,
     textSelectable: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -110,7 +111,7 @@ fun ChatBubbleCard(
         ),
     ) {
         MarkdownText(
-            markdown = message.content.value,
+            markdown = message.content,
             isTextSelectable = textSelectable,
             disableLinkMovementMethod = !textSelectable,
             modifier = Modifier

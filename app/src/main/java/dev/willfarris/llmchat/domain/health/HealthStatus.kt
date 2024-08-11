@@ -1,4 +1,4 @@
-package dev.willfarris.llmchat.data.api.ollama.health
+package dev.willfarris.llmchat.domain.health
 
 import dev.willfarris.llmchat.data.api.ollama.model.Tags
 

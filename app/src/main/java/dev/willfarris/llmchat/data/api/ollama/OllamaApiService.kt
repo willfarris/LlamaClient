@@ -4,7 +4,7 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import dev.willfarris.llmchat.data.api.ollama.chat.ChatPartialResponse
 import dev.willfarris.llmchat.data.api.ollama.chat.ChatRequest
-import dev.willfarris.llmchat.data.api.ollama.health.PsInfo
+import dev.willfarris.llmchat.domain.health.PsInfo
 import dev.willfarris.llmchat.data.api.ollama.model.Tags
 import dev.willfarris.llmchat.data.preferences.OllamaPreferencesManager
 import kotlinx.coroutines.Dispatchers
@@ -69,7 +69,7 @@ interface OllamaAPIService {
             return ollamaAPIService!!
         }
 
-        fun streamChat(chatRequest: ChatRequest) = flow {
+        /*fun streamChat(chatRequest: ChatRequest) = flow {
             coroutineScope {
                 val response = getInstance().chat(chatRequest).execute()
                 val gson = Gson()
@@ -97,7 +97,7 @@ interface OllamaAPIService {
                     throw HttpException(response)
                 }
             }
-        }
+        }*/
 
     }
 }
