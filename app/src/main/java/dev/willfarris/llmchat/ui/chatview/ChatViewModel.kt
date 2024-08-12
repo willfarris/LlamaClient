@@ -39,6 +39,7 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
 
     data class MessageUiContent(
         val role: String,
+        // Seems to be needed to get Compose to update cleanly when strings are modified
         val content: MutableState<String> = mutableStateOf(""),
         val modelName: String,
         val id: Long,
@@ -178,11 +179,18 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
                             val response = repository.saveMessage(chat, m)
                             assistantResponse = MessageUiContent(
                                 role = response.role,
-                                content = mutableStateOf(response.content),
+                                content = mutableStateOf(""),
                                 modelName = response.modelName,
                                 id = response.id,
                             )
                             messageList.add(assistantResponse!!)
+                        } else {
+                            val m = repository.saveMessage(chat, Message(
+                                id = assistantResponse!!.id,
+                                role = assistantResponse!!.role,
+                                content = assistantResponse!!.content.value,
+                                modelName = assistantResponse!!.modelName,
+                            ))
                         }
                         assistantResponse!!.content.value = assistantResponse!!.content.value + m.content
                     }
