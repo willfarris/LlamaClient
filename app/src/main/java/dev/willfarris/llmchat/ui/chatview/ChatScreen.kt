@@ -41,7 +41,7 @@ fun ChatScreen(
     val coroutineScope = rememberCoroutineScope()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
 
-    LaunchedEffect(viewModel.messagesList.value.size) {
+    LaunchedEffect(viewModel.messageList.size) {
         messageListState.animateScrollToItem(0)
     }
 
@@ -51,7 +51,15 @@ fun ChatScreen(
         drawerState = drawerState,
         drawerContent = {
             ModalDrawerSheet {
-                ConversationListDrawer(viewModel)
+                ConversationListDrawer(
+                    viewModel.curChatIndex,
+                    viewModel.chatList,
+                    viewModel.modelsList,
+                    { viewModel.createNewChat() },
+                    {i -> viewModel.deleteChat(i) },
+                    {i -> viewModel.selectChat(viewModel.chatList[i].id) },
+                    {chat, a, b, c, d -> viewModel.updateChatSettings(chat, a, b, c, d)}
+                )
             }
         }) {
         Scaffold(
@@ -94,9 +102,9 @@ fun ChatScreen(
                     state = messageListState,
                 ) {
                     itemsIndexed(
-                        viewModel.messagesList.value.asReversed(),
+                        viewModel.messageList.asReversed(),
                         //key = { message -> message.id }
-                    ) { index, message ->
+                    ) { _, message ->
                         ChatBubble(
                             message = message,
                             onDelete = {

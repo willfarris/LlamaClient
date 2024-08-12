@@ -1,5 +1,6 @@
 package dev.willfarris.llmchat.data
 
+import android.util.Log
 import dev.willfarris.llmchat.data.history.ChatConversationEntity
 import dev.willfarris.llmchat.data.history.ChatHistoryDAO
 import dev.willfarris.llmchat.data.history.ChatMessageEntity
@@ -20,22 +21,15 @@ class ChatRepositoryImpl(
     }*/
 
     override suspend fun getChatHistory(chat: Chat): List<Message> {
-        //val chat = chatHistoryDAO.getConversationById(chatId)
         val messages = chatHistoryDAO.getMessagesInChat(chat.id).map {
             Message(
+                id = it.id,
                 role = it.role,
                 content = it.messageContent,
                 modelName = it.modelName,
             )
         }
         return messages
-        /*return Chat(
-            model = chat.preferredModel,
-            title = chat.title,
-            contextSize = chat.contextSize,
-            systemPrompt = chat.systemPrompt,
-            //messages = messages
-        )*/
     }
 
     override suspend fun getAllChats(): List<Chat> {
@@ -87,7 +81,8 @@ class ChatRepositoryImpl(
 
     override suspend fun saveMessage(chat: Chat, message: Message): Message {
         val messageEntity = ChatMessageEntity(
-            id = chat.id,
+            id = message.id,
+            chatId = chat.id,
             role = message.role,
             messageContent = message.content,
             modelName = chat.model!!,

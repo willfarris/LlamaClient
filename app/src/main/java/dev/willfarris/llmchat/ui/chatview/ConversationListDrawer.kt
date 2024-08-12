@@ -39,11 +39,21 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.willfarris.llmchat.R
+import dev.willfarris.llmchat.domain.Chat
+import dev.willfarris.llmchat.domain.Model
 import dev.willfarris.llmchat.ui.components.DialogPopup
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ConversationListDrawer(viewModel: ChatViewModel) {
+fun ConversationListDrawer(
+    curChatIndex: Int,
+    chatList: List<Chat>,
+    modelsList: List<Model>,
+    onCreate: () -> Unit,
+    onDelete: (Int) -> Unit,
+    onSelect: (Int) -> Unit,
+    updateChatSettings: (Chat, String?, String?, String?, String?) -> Unit
+) {
 
     val bubbleColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val bubbleTextColor = MaterialTheme.colorScheme.onSurface
@@ -64,13 +74,13 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
             modifier = Modifier.weight(1f)
         ) {
             itemsIndexed(
-                viewModel.chatList.value,
+                chatList,
                 key = { _, chat -> chat.id }
             ) { index, chat ->
                 val backgroundColor =
-                    if (index == viewModel.curChatIndex) selectedBubbleColor else bubbleColor
+                    if (index == curChatIndex) selectedBubbleColor else bubbleColor
                 val textColor =
-                    if (index == viewModel.curChatIndex) selectedBubbleTextColor else bubbleTextColor
+                    if (index == curChatIndex) selectedBubbleTextColor else bubbleTextColor
 
                 Row(
                     modifier = Modifier
@@ -78,7 +88,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
                         .shadow(elevation = 2.dp, shape = RoundedCornerShape(8.dp))
                         .fillMaxWidth()
                         .background(backgroundColor)
-                        .clickable { viewModel.selectChat(chat.id) },
+                        .clickable { onSelect(index) },
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -123,7 +133,8 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
                                         .padding(8.dp)
                                         .fillMaxWidth()
                                         .clickable {
-                                            viewModel.deleteChat(index)
+                                            onDelete(index)
+                                            chatDropdownExpanded = false
                                         }
                                 )
                             }
@@ -138,7 +149,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
             modifier = Modifier.fillMaxWidth()
         ) {
             IconButton(
-                onClick = { viewModel.createNewChat() },
+                onClick = { onCreate() },
                 modifier = Modifier.padding(end = 8.dp)
             ) {
                 Image(
@@ -153,7 +164,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
     }
 
     if(showEditDialog) {
-        val editChat = viewModel.chatList.value[editIndex]
+        val editChat = chatList[editIndex]
         val chatTitle: MutableState<String> = mutableStateOf(editChat.title)
         val chatPrompt: MutableState<String> = mutableStateOf(editChat.systemPrompt)
         val chatContextSize: MutableState<String> = mutableStateOf(editChat.contextSize.toString())
@@ -204,7 +215,7 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
                             expanded = expanded,
                             onDismissRequest = { expanded = false },
                         ) {
-                            viewModel.modelsList.value.forEach {model ->
+                            modelsList.forEach {model ->
                                 DropdownMenuItem(
                                     text = { Text(model.name) },
                                     onClick = {
@@ -237,12 +248,12 @@ fun ConversationListDrawer(viewModel: ChatViewModel) {
                 }
             },
             onConfirm = {
-                viewModel.updateChatSettings(
+                updateChatSettings(
                     editChat,
-                    chatTitle = chatTitle.value,
-                    chatModel = preferredModel.value,
-                    contextSize = chatContextSize.value,
-                    chatPrompt = chatPrompt.value,
+                    chatTitle.value,
+                    preferredModel.value,
+                    chatContextSize.value,
+                    chatPrompt.value,
                 )
                 showEditDialog = false
             },

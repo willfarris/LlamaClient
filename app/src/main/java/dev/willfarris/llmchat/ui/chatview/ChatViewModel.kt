@@ -1,10 +1,13 @@
 package dev.willfarris.llmchat.ui.chatview
 
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.snapshots.SnapshotStateList
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.google.gson.JsonSyntaxException
 import dev.willfarris.llmchat.ChatAssistantApplication
 import dev.willfarris.llmchat.data.preferences.OllamaPreferencesManager
 import dev.willfarris.llmchat.domain.Chat
@@ -14,6 +17,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.launchIn
 import kotlinx.coroutines.flow.onEach
@@ -21,7 +25,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import retrofit2.HttpException
 import java.io.IOException
+import java.net.ConnectException
+import java.net.SocketTimeoutException
 import kotlin.time.Duration
 
 /*data class ChatMessageUiContent(
@@ -29,14 +36,6 @@ import kotlin.time.Duration
     val content: MutableState<String> = mutableStateOf(""),
     val modelName: String,
     val id: String = UUID.randomUUID().toString()
-)
-
-data class ChatSummaryUiContent(
-    var chatId: Long,
-    var chatTitle: MutableState<String>,
-    var chatPrompt: MutableState<String>,
-    var chatContextSize: MutableState<String>,
-    var chatModel: String?,
 )*/
 
 
@@ -52,17 +51,14 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
     private val repository = application.chatRepository
     private val ollamaApi = application.ollamaApi
 
-    private val _messageList: MutableStateFlow<List<Message>> = MutableStateFlow(emptyList())
-    val messagesList: SnapshotStateList<List<Message>> = _messageList
-
-    private val _chatList: MutableStateFlow<List<Chat>> = MutableStateFlow(emptyList())
-    val chatList: StateFlow<List<Chat>> = _chatList
-
-    private val _modelsList: MutableStateFlow<List<Model>> = MutableStateFlow(emptyList())
-    val modelsList: StateFlow<List<Model>> = _modelsList
-
-    private val _activeModelsList: MutableStateFlow<List<Model>> = MutableStateFlow(emptyList())
-    val activeModelsList: StateFlow<List<Model>> = _activeModelsList
+    var messageList = mutableStateListOf<Message>()
+        private set
+    var chatList = mutableStateListOf<Chat>()
+        private set
+    var modelsList = mutableListOf<Model>()
+        private set
+    var activeModelsList = mutableStateListOf<Model>()
+        private set
 
     var curChatIndex: Int = OllamaPreferencesManager.lastChatIndex
         private set
@@ -78,15 +74,16 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 runBlocking {
-                    _chatList.value = repository.getAllChats()
-                    if (_chatList.value.isEmpty()) {
+                    chatList.clear()
+                    chatList.addAll(repository.getAllChats())
+                    if (chatList.isEmpty()) {
                         createNewChat()
                     } else {
-                        selectChat(_chatList.value[curChatIndex].id)
+                        selectChat(chatList[curChatIndex].id)
                     }
                 }
                 try {
-                    _modelsList.value = ollamaApi.getAvailableModels()
+                    modelsList = ollamaApi.getAvailableModels().toMutableList()
                 } catch(e: Exception) {
                     errorMessage.update {
                         "Unable to fetch available models from Ollama server"
@@ -107,22 +104,24 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
                 val health = ollamaApi.serverHealth()
                 heartbeatState.value = health.heartbeatPing == "Ollama is running"
                 if(heartbeatState.value) {
-                    _activeModelsList.value = health.psInfo!!.models.map {
+                    activeModelsList.clear()
+                    activeModelsList.addAll(health.psInfo!!.models.map {
                         Model(
                             name = it.name,
                             size = it.size,
                             sizeVram = it.sizeVram,
                             expiresAt = it.expiresAt,
                         )
-                    }
-                    _modelsList.value = health.tags!!.models.map {
+                    })
+                    modelsList.clear()
+                    modelsList.addAll(health.tags!!.models.map {
                         Model(
                             name = it.name,
                             size = it.size,
                             sizeVram = it.sizeVram,
                             expiresAt = it.expiresAt,
                         )
-                    }
+                    })
                 }
             } catch(e: IOException) {
                 heartbeatState.value = false
@@ -143,6 +142,81 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
     }
 
     fun sendMessageFromUser(text: String) {
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val chat = chatList[curChatIndex]
+                val model = chat.model
+                if (model == null) {
+                    errorMessage.update {
+                        "Select a model"
+                    }
+                    return@withContext
+                }
+
+                val userMessage = Message(
+                    content = text,
+                    role = "user",
+                    modelName = model
+                )
+                repository.saveMessage(chat, userMessage)
+                messageList.add(userMessage)
+
+                val systemPrompt = Message(
+                    role = "assistant",
+                    content = chat.systemPrompt,
+                    modelName = model
+                )
+
+                val messages = listOf(systemPrompt) + repository.getChatHistory(chat)
+
+                var response: Message? = null
+                try {
+                    ollamaApi.sendMessage(chat, messages).collect { m ->
+                        if (response == null) {
+                            response = Message(
+                                content = m.content,
+                                role = m.role,
+                                modelName = m.modelName,
+                            )
+                        } else {
+                            response = Message(
+                                id = response!!.id,
+                                role = response!!.role,
+                                content = response!!.content + m.content,
+                                modelName = response!!.modelName
+                            )
+                        }
+                        response = repository.saveMessage(chat, response!!)
+                        messageList.clear()
+                        messageList.addAll(repository.getChatHistory(chat))
+                    }
+                } catch (e: HttpException) {
+                    val resp = e.response()!!
+                    val str = "Error ${e.code()} ${e.message}, ${(resp.errorBody())?.string()}"
+                    errorMessage.update {
+                        str
+                    }
+                } catch (e: JsonSyntaxException) {
+                    errorMessage.update {
+                        e.message
+                    }
+                } catch (e: IndexOutOfBoundsException) {
+                    errorMessage.update {
+                        e.message
+                    }
+                } catch (e: SocketTimeoutException) {
+                    errorMessage.update {
+                        e.message
+                    }
+                } catch (e: ConnectException) {
+                    errorMessage.update {
+                        e.message
+                    }
+                }
+            }
+        }
+
+
         /*val c = chatsList[curChatIndex]
         val model = c.chatModel
         val id = c.chatId
@@ -195,10 +269,16 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
 
     fun deleteChat(chatIndexToDelete: Int) {
         viewModelScope.launch {
-            val chat = _chatList.value[chatIndexToDelete]
+            val chat = chatList[chatIndexToDelete]
             repository.deleteChat(chat)
-            _chatList.value = repository.getAllChats()
-            selectChat(_chatList.value[0].id)
+            chatList.clear()
+            chatList.addAll(repository.getAllChats())
+            if(chatList.isEmpty()) {
+                createNewChat()
+                return@launch
+            }
+            if(chatIndexToDelete == curChatIndex) selectChat(chatList.last().id)
+            else if(chatIndexToDelete < curChatIndex) selectChat(chatList[--curChatIndex].id)
 
             /*val chatId = chatsList[chatIndexToDelete].chatId
             chatsList.removeAt(chatIndexToDelete)
@@ -242,7 +322,8 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
                 systemPrompt = chatPrompt ?: chat.systemPrompt,
             )
             repository.saveChat(updatedChat)
-            _chatList.value = repository.getAllChats()
+            chatList.clear()
+            chatList.addAll(repository.getAllChats())
             selectChat(chat.id)
         }
         /*if(chatTitle != null) c.title = chatTitle
@@ -268,12 +349,14 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
 
     fun selectChat(chatId: Long) {
         viewModelScope.launch {
-            chatList.value.forEachIndexed { i, c ->
+            chatList.forEachIndexed { i, c ->
                 if (c.id == chatId) {
                     curChatIndex = i
                     OllamaPreferencesManager.lastChatIndex = curChatIndex
                     val messages = repository.getChatHistory(c)
-                    _messageList.value = messages
+                    messageList.clear()
+                    messageList.addAll(messages)
+                    curModelName.value = c.model
                 }
             }
         }
@@ -303,7 +386,8 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
                     model = curModelName.value
                 )
                 val chatId = repository.saveChat(newChat).id
-                _chatList.value = repository.getAllChats()
+                chatList.clear()
+                chatList.addAll(repository.getAllChats())
                 selectChat(chatId)
                 /*withContext(Dispatchers.Main) {
                     chatsList.add(newChat)
@@ -318,13 +402,8 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
     }
 
     fun selectModel(modelIndex: Int) {
-        val chat = chatList.value[curChatIndex]
-        updateChatSettings(chat, chatModel = modelsList.value[modelIndex].name)
-        curModelName.value = chat.model
+        val chat = chatList[curChatIndex]
+        updateChatSettings(chat, chatModel = modelsList[modelIndex].name)
+        curModelName.value = modelsList[modelIndex].name
     }
-
-    /*fun selectModel(modelName: String) {
-        updateChatSettings(curChatIndex, chatModel = modelName)
-        curModelName.value = chatList.value[curChatIndex].model
-    }*/
 }
