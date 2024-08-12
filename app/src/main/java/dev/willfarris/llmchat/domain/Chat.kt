@@ -6,6 +6,4 @@ data class Chat(
     val title: String,
     val contextSize: Int,
     val systemPrompt: String,
-
-    //val messages: List<Message>
 )

@@ -68,36 +68,5 @@ interface OllamaAPIService {
             }
             return ollamaAPIService!!
         }
-
-        /*fun streamChat(chatRequest: ChatRequest) = flow {
-            coroutineScope {
-                val response = getInstance().chat(chatRequest).execute()
-                val gson = Gson()
-                if (response.isSuccessful) {
-                    val input = response.body()?.byteStream()?.bufferedReader() ?: throw Exception()
-                    var doneResponse = false
-                    while (!doneResponse) {
-                        val line =
-                            withContext(Dispatchers.IO) {
-                                input.readLine()
-                            } ?: continue
-                        try {
-                            val partialResponse =
-                                gson.fromJson(line, ChatPartialResponse::class.java)
-                            doneResponse = partialResponse.done
-                            emit(partialResponse)
-                        } catch (e: JsonSyntaxException) {
-                            throw e
-                        }
-                    }
-                    withContext(Dispatchers.IO) {
-                        input.close()
-                    }
-                } else {
-                    throw HttpException(response)
-                }
-            }
-        }*/
-
     }
 }

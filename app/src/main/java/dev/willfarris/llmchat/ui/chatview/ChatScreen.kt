@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -86,7 +85,6 @@ fun ChatScreen(
                     title = { AssistantTopBar(viewModel) },
                     colors = topAppBarColors(
                         containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                        //scrolledContainerColor = MaterialTheme.colorScheme.surfaceContainer,
                     ),
                 )
             },
@@ -101,10 +99,10 @@ fun ChatScreen(
                     reverseLayout = true,
                     state = messageListState,
                 ) {
-                    itemsIndexed(
+                    items(
                         viewModel.messageList.asReversed(),
-                        //key = { message -> message.id }
-                    ) { _, message ->
+                        key = { message: ChatViewModel.MessageUiContent -> message.id }
+                    ) {message ->
                         ChatBubble(
                             message = message,
                             onDelete = {

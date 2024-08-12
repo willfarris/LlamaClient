@@ -25,16 +25,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import dev.jeziellago.compose.markdowntext.MarkdownText
-import dev.willfarris.llmchat.domain.Message
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ChatBubble(
-    message: Message,
+    message: ChatViewModel.MessageUiContent,
     onDelete: () -> Unit,
     onRegenerate: () -> Unit,
 ) {
@@ -96,7 +94,7 @@ fun ChatBubble(
 
 @Composable
 fun ChatBubbleCard(
-    message: Message,
+    message: ChatViewModel.MessageUiContent,
     textSelectable: Boolean,
     modifier: Modifier = Modifier,
 ) {
@@ -111,7 +109,7 @@ fun ChatBubbleCard(
         ),
     ) {
         MarkdownText(
-            markdown = message.content,
+            markdown = message.content.value,
             isTextSelectable = textSelectable,
             disableLinkMovementMethod = !textSelectable,
             modifier = Modifier

@@ -11,9 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import dev.willfarris.llmchat.data.api.ollama.model.ModelInfo
 import dev.willfarris.llmchat.domain.Model
-import dev.willfarris.llmchat.ui.chatview.ChatViewModel
 
 @Composable
 fun PsModelList(activeModelList: List<Model>) {

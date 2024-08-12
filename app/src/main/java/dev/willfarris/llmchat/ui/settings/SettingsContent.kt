@@ -2,11 +2,7 @@ package dev.willfarris.llmchat.ui.settings
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import com.alorma.compose.settings.ui.SettingsGroup
-import com.alorma.compose.settings.ui.SettingsSwitch
-import dev.willfarris.llmchat.data.preferences.OllamaPreferencesManager
 import dev.willfarris.llmchat.ui.settings.components.SettingsDropdown
 import dev.willfarris.llmchat.ui.settings.components.SettingsTextDialog
 

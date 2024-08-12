@@ -1,6 +1,5 @@
 package dev.willfarris.llmchat.ui.settings
 
-import android.util.Log
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import dev.willfarris.llmchat.ChatAssistantApplication

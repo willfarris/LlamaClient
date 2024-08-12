@@ -6,14 +6,12 @@ import dev.willfarris.llmchat.data.api.ollama.OllamaAPIService
 import dev.willfarris.llmchat.data.api.ollama.chat.ChatMessage
 import dev.willfarris.llmchat.data.api.ollama.chat.ChatPartialResponse
 import dev.willfarris.llmchat.data.api.ollama.chat.ChatRequest
-import dev.willfarris.llmchat.data.history.ChatMessageEntity
 import dev.willfarris.llmchat.domain.Chat
 import dev.willfarris.llmchat.domain.Message
 import dev.willfarris.llmchat.domain.Model
 import dev.willfarris.llmchat.domain.OllamaApi
 import dev.willfarris.llmchat.domain.health.HealthStatus
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.withContext
 import okio.IOException
