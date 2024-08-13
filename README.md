@@ -1,5 +1,5 @@
 # LLamaClient
-An Android client to communicate with LLMs hosted with an Ollama server.
+An Android client to communicate with LLMs hosted with [Ollama](https://ollama.com/).
 ![App screenshot showcase](images/app_screenshots.png)
 
 ## Usage
