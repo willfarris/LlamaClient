@@ -6,7 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -55,9 +55,9 @@ fun ChatScreen(
                     viewModel.chatList,
                     viewModel.modelsList,
                     { viewModel.createNewChat() },
-                    {i -> viewModel.deleteChat(i) },
-                    {i -> viewModel.selectChat(viewModel.chatList[i].id) },
-                    {chat, a, b, c, d -> viewModel.updateChatSettings(chat, a, b, c, d)}
+                    { i -> viewModel.deleteChat(i) },
+                    { i -> viewModel.selectChat(viewModel.chatList[i].id) },
+                    { chat, a, b, c, d -> viewModel.updateChatSettings(chat, a, b, c, d) }
                 )
             }
         }) {
@@ -67,9 +67,9 @@ fun ChatScreen(
                     navigationIcon = {
                         IconButton(onClick = {
                             coroutineScope.launch {
-                                if(drawerState.isOpen) {
+                                if (drawerState.isOpen) {
                                     drawerState.close()
-                                } else if(drawerState.isClosed) {
+                                } else if (drawerState.isClosed) {
                                     drawerState.open()
                                 }
                             }
@@ -99,14 +99,16 @@ fun ChatScreen(
                     reverseLayout = true,
                     state = messageListState,
                 ) {
-                    items(
-                        viewModel.messageList.asReversed(),
-                        key = { message: ChatViewModel.MessageUiContent -> message.id }
-                    ) {message ->
+                    itemsIndexed(
+                        viewModel.messageList.asReversed()
+                    ) { index, message ->
                         ChatBubble(
                             message = message,
+                            onSave = {newContent ->
+                                viewModel.editMessage(viewModel.messageList.size - index - 1, newContent)
+                            },
                             onDelete = {
-
+                               viewModel.deleteMessage(viewModel.messageList.size - index - 1)
                             },
                             onRegenerate = {},
                         )

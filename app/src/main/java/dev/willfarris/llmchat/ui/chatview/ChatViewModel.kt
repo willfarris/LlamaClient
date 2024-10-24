@@ -185,7 +185,7 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
                             )
                             messageList.add(assistantResponse!!)
                         } else {
-                            val m = repository.saveMessage(chat, Message(
+                            repository.saveMessage(chat, Message(
                                 id = assistantResponse!!.id,
                                 role = assistantResponse!!.role,
                                 content = assistantResponse!!.content.value,
@@ -218,6 +218,34 @@ class ChatViewModel(application: ChatAssistantApplication): ViewModel() {
                     }
                 }
             }
+        }
+    }
+
+    fun editMessage(messageIndex: Int, messageContent: String) {
+        viewModelScope.launch {
+            val message = messageList[messageIndex]
+            message.content.value = messageContent
+            val chat = chatList[curChatIndex]
+            repository.saveMessage(chat, Message(
+                id = message.id,
+                content = message.content.value,
+                role = message.role,
+                modelName = message.modelName,
+            ))
+        }
+    }
+
+    fun deleteMessage(messageIndex: Int) {
+        viewModelScope.launch {
+            val message = messageList[messageIndex]
+            val chat = chatList[curChatIndex]
+            repository.deleteMessage(chat, Message(
+                id = message.id,
+                content = message.content.value,
+                role = message.role,
+                modelName = message.modelName,
+            ))
+            messageList.removeAt(messageIndex)
         }
     }
 

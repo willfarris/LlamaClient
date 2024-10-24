@@ -85,26 +85,6 @@ fun ChatInputBox(messageSendHandler: (String) -> Unit) {
                 }
             }
         )
-        /*Spacer(modifier = Modifier.width(8.dp))
-        IconButton(
-            onClick = {
-                if (chatInputFieldValue.text != "")
-                    messageSendHandler(chatInputFieldValue.text)
-                chatInputFieldValue = TextFieldValue("")
-            },
-            modifier = Modifier
-                .align(Alignment.CenterVertically)
-                .clip(
-                    CircleShape
-                )
-                .background(buttonColor)
-        ) {
-            Image(
-                painter = painterResource(id = R.drawable.baseline_send_24),
-                colorFilter = ColorFilter.tint(buttonIcon),
-                contentDescription = "Send button",
-            )
-        }*/
     }
 }
 

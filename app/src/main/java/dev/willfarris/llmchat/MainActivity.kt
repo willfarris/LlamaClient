@@ -20,11 +20,11 @@ import dev.willfarris.llmchat.ui.theme.ThemeManager
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
+
+    private val chatViewModel: ChatViewModel by viewModels { ChatViewModelFactory(application as ChatAssistantApplication) }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        val chatViewModel: ChatViewModel by viewModels { ChatViewModelFactory(application as ChatAssistantApplication) }
-
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 chatViewModel.errorMessage.collect { errorMessage ->
